@@ -8,10 +8,39 @@ namespace Aspire.Hosting.Azure;
 
 public static class AzureComponentExtensions
 {
+    private const string ConnectionStringEnvironmentName = "ConnectionStrings__";
+
     public static IDistributedApplicationBuilder AddAzureProvisioning(this IDistributedApplicationBuilder builder)
     {
         builder.Services.AddLifecycleHook<AzureProvisioner>();
         return builder;
+    }
+
+    public static IDistributedApplicationComponentBuilder<AzureRedisComponent> AddAzureRedis(this IDistributedApplicationBuilder builder, string name)
+    {
+        var component = new AzureRedisComponent();
+        return builder.AddComponent(name, component);
+    }
+
+    public static IDistributedApplicationComponentBuilder<T> WithAzureRedis<T>(this IDistributedApplicationComponentBuilder<T> builder, IDistributedApplicationComponentBuilder<AzureRedisComponent> redis, string? connectionName = null)
+        where T : IDistributedApplicationComponentWithEnvironment
+    {
+        return builder.WithEnvironment((env) =>
+        {
+            if (string.IsNullOrEmpty(connectionName))
+            {
+                redis.Component.TryGetName(out connectionName);
+
+                if (connectionName is null)
+                {
+                    throw new DistributedApplicationException("Redis connection name could not be determined. Please provide one.");
+                }
+            }
+
+            var connectionString = $"{redis.Component.HostName}:{redis.Component.SslPort},password={redis.Component.AccessKey},ssl=True,abortConnect=False";
+
+            env[ConnectionStringEnvironmentName + connectionName] = connectionString;
+        });
     }
 
     public static IDistributedApplicationComponentBuilder<AzureKeyVaultComponent> AddAzureKeyVault(this IDistributedApplicationBuilder builder, string name)

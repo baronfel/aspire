@@ -1,6 +1,5 @@
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.Postgres;
-using Aspire.Hosting.Redis;
 using Aspire.Hosting.SqlServer;
 using Projects = DevHost.Projects;
 
@@ -12,7 +11,8 @@ var grafana = builder.AddContainer("grafana", "grafana/grafana")
        .WithServiceBinding(containerPort: 3000, name: "grafana-http", scheme: "http");
 
 var postgres = builder.AddPostgresContainer("postgres");
-var redis = builder.AddRedisContainer("basketCache");
+// var redis = builder.AddRedisContainer("basketCache");
+var redis = builder.AddAzureRedis("basketCache");
 var sql = builder.AddSqlServerContainer("sql");
 
 var catalog = builder.AddProject<Projects.CatalogService>()
@@ -23,7 +23,7 @@ var catalog = builder.AddProject<Projects.CatalogService>()
 var serviceBus = builder.AddAzureServiceBus("messaging", queueNames: ["orders"]);
 
 var basket = builder.AddProject<Projects.BasketService>()
-                    .WithRedis(redis)
+                    .WithAzureRedis(redis)
                     .WithAzureServiceBus(serviceBus);
 
 builder.AddProject<Projects.MyFrontend>()

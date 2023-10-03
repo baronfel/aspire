@@ -1,6 +1,7 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Diagnostics;
 using System.Text.Json;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
@@ -12,6 +13,8 @@ using Azure.ResourceManager.Authorization;
 using Azure.ResourceManager.Authorization.Models;
 using Azure.ResourceManager.KeyVault;
 using Azure.ResourceManager.KeyVault.Models;
+using Azure.ResourceManager.Redis;
+using Azure.ResourceManager.Redis.Models;
 using Azure.ResourceManager.Resources;
 using Azure.ResourceManager.ServiceBus;
 using Azure.ResourceManager.Storage;
@@ -139,6 +142,17 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
             }
         }
 
+        var redisResources = resourceGroup.GetAllRedis();
+        var componentNameToRedisMap = new Dictionary<string, RedisResource>();
+
+        await foreach (var redis in redisResources.GetAllAsync(cancellationToken: cancellationToken))
+        {
+            if (redis.Data.Tags.TryGetValue("aspire-component-name", out var aspireName))
+            {
+                componentNameToRedisMap.Add(aspireName, redis);
+            }
+        }
+
         var tasks = new List<Task>();
 
         foreach (var c in azureComponents)
@@ -193,6 +207,23 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
                 c.TryGetName(out var name);
                 componentNameToKeyVaultMap.Remove(name!);
             }
+
+            if (c is AzureRedisComponent redis)
+            {
+                var task = CreateRedisAsync(armClient,
+                                            subscription,
+                                            redisResources,
+                                            componentNameToRedisMap,
+                                            location,
+                                            redis,
+                                            principalId,
+                                            cancellationToken);
+
+                tasks.Add(task);
+
+                c.TryGetName(out var name);
+                componentNameToRedisMap.Remove(name!);
+            }
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -218,6 +249,54 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
 
             await kv.DeleteAsync(WaitUntil.Started, cancellationToken).ConfigureAwait(false);
         }
+
+        foreach (var (name, redis) in componentNameToRedisMap)
+        {
+            logger.LogInformation("Deleting redis {redisName} which maps to component name {name}.", redis.Id, name);
+
+            await redis.DeleteAsync(WaitUntil.Started, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    // Need to investigate AAD auth for redis
+    // https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-azure-active-directory-for-authentication#azure-ad-client-workflow
+
+#pragma warning disable IDE0060 // Remove unused parameter
+    private async Task CreateRedisAsync(
+        ArmClient armClient,
+        SubscriptionResource subscription,
+        RedisCollection redisResources,
+        Dictionary<string, RedisResource> componentNameToRedisMap,
+        AzureLocation location,
+        AzureRedisComponent redis,
+        Guid principalId,
+        CancellationToken cancellationToken)
+#pragma warning restore IDE0060 // Remove unused parameter
+    {
+        redis.TryGetName(out var name);
+        componentNameToRedisMap.TryGetValue(name!, out var redisResource);
+
+        if (redisResource is null)
+        {
+            var redisName = Guid.NewGuid().ToString().Replace("-", string.Empty)[0..20];
+
+            logger.LogInformation("Creating redis {redisName} in {location}...", redisName, location);
+
+            var redisCreateOrUpdateContent = new RedisCreateOrUpdateContent(location, new RedisSku(RedisSkuName.Basic, RedisSkuFamily.BasicOrStandard, 0));
+            redisCreateOrUpdateContent.Tags.Add("aspire-component-name", name);
+
+            var sw = Stopwatch.StartNew();
+            var operation = await redisResources.CreateOrUpdateAsync(WaitUntil.Completed, redisName, redisCreateOrUpdateContent, cancellationToken).ConfigureAwait(false);
+            redisResource = operation.Value;
+            sw.Stop();
+
+            logger.LogInformation("Redis {redisName} created in {elapsed}", redisResource.Data.Name, sw.Elapsed);
+        }
+
+        redis.HostName = redisResource.Data.HostName;
+        redis.Port = redisResource.Data.Port;
+        redis.SslPort = redisResource.Data.SslPort;
+        redis.AccessKey = redisResource.Data.AccessKeys.PrimaryKey;
     }
 
     private async Task CreateKeyVaultAsync(
@@ -249,10 +328,12 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
             var parameters = new KeyVaultCreateOrUpdateContent(location, properties);
             parameters.Tags.Add("aspire-component-name", name);
 
+            var sw = Stopwatch.StartNew();
             var operation = await keyVaults.CreateOrUpdateAsync(WaitUntil.Completed, vaultName, parameters, cancellationToken).ConfigureAwait(false);
             keyVaultResource = operation.Value;
+            sw.Stop();
 
-            logger.LogInformation("Key vault {vaultName} created.", keyVaultResource.Data.Name);
+            logger.LogInformation("Key vault {vaultName} created in {elapsed}.", keyVaultResource.Data.Name, sw.Elapsed);
         }
 
         keyVault.VaultName = keyVaultResource.Data.Name;
@@ -383,11 +464,13 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
             var parameters = new StorageAccountCreateOrUpdateContent(sku, kind, location);
             parameters.Tags.Add("aspire-component-name", name);
 
+            var sw = Stopwatch.StartNew();
             // Now we can create a storage account with defined account name and parameters
             var accountCreateOperation = await storageAccounts.CreateOrUpdateAsync(WaitUntil.Completed, accountName, parameters, cancellationToken).ConfigureAwait(false);
             storageAccount = accountCreateOperation.Value;
+            sw.Stop();
 
-            logger.LogInformation("Storage account {accountName} created.", storageAccount.Data.Name);
+            logger.LogInformation("Storage account {accountName} created in {elapsed}.", storageAccount.Data.Name, sw.Elapsed);
         }
 
         // Our storage component doesn't support connection strings yet
