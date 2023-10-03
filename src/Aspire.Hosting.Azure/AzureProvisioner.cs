@@ -296,7 +296,11 @@ internal sealed class AzureProvisioner(IConfiguration configuration, IHostEnviro
         redis.HostName = redisResource.Data.HostName;
         redis.Port = redisResource.Data.Port;
         redis.SslPort = redisResource.Data.SslPort;
-        redis.AccessKey = redisResource.Data.AccessKeys.PrimaryKey;
+
+        // This must be an explicit call to get the keys
+        var keysOperation = await redisResource.GetKeysAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        var keys = keysOperation.Value;
+        redis.AccessKey = keys.PrimaryKey;
     }
 
     private async Task CreateKeyVaultAsync(
