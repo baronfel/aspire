@@ -8,7 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
-    <ProjectReference Include="..\..\..\src\Components\Aspire.Npgsql.EntityFrameworkCore.PostgreSQL\Aspire.Npgsql.EntityFrameworkCore.PostgreSQL.csproj" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="8.0.0-dev" />
+    <!-- <ProjectReference Include="..\..\..\src\Components\Aspire.Npgsql.EntityFrameworkCore.PostgreSQL\Aspire.Npgsql.EntityFrameworkCore.PostgreSQL.csproj" /> -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

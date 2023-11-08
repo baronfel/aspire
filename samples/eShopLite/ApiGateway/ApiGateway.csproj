@@ -12,10 +12,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery.Abstractions\Microsoft.Extensions.ServiceDiscovery.Abstractions.csproj" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Abstractions" VersionOverride="8.0.0-dev" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Yarp" VersionOverride="8.0.0-dev"/>
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" VersionOverride="8.0.0-dev" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery.Dns" VersionOverride="8.0.0-dev" />
+
+    <!-- <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery.Abstractions\Microsoft.Extensions.ServiceDiscovery.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery.Yarp\Microsoft.Extensions.ServiceDiscovery.Yarp.csproj" />
     <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery\Microsoft.Extensions.ServiceDiscovery.csproj" />
-    <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery.Dns\Microsoft.Extensions.ServiceDiscovery.Dns.csproj" />
+    <ProjectReference Include="..\..\..\src\Microsoft.Extensions.ServiceDiscovery.Dns\Microsoft.Extensions.ServiceDiscovery.Dns.csproj" /> -->
     <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 

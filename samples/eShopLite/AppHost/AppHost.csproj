@@ -9,9 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Aspire.Hosting\Aspire.Hosting.csproj" />
+    <PackageReference Include="Aspire.Hosting" VersionOverride="8.0.0-dev" />
+    <PackageReference Include="Aspire.Hosting.Azure" VersionOverride="8.0.0-dev"  />
+    <PackageReference Include="Aspire.Hosting.Azure.Provisioning" VersionOverride="8.0.0-dev" />
+
+    <!-- <ProjectReference Include="..\..\..\src\Aspire.Hosting\Aspire.Hosting.csproj" />
     <ProjectReference Include="..\..\..\src\Aspire.Hosting.Azure\Aspire.Hosting.Azure.csproj" />
-    <ProjectReference Include="..\..\..\src\Aspire.Hosting.Azure.Provisioning\Aspire.Hosting.Azure.Provisioning.csproj" />
+    <ProjectReference Include="..\..\..\src\Aspire.Hosting.Azure.Provisioning\Aspire.Hosting.Azure.Provisioning.csproj" /> -->
+
     <ProjectReference Include="..\ApiGateway\ApiGateway.csproj" />
     <ProjectReference Include="..\BasketService\BasketService.csproj" />
     <ProjectReference Include="..\CatalogDb\CatalogDb.csproj" />

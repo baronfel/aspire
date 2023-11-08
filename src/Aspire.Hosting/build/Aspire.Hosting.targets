@@ -15,7 +15,9 @@
   <!-- Generate the data structures for doing the codegen for service references -->
   <Target Name="CreateServiceMetadataSources">
     <ItemGroup>
-      <_AppProjects Include="@(ProjectReference)" Condition="'%(ProjectReference.ReferenceOutputAssembly)' == 'false'" />
+      <!-- Note an assumption here - we're assuming that every projectreference is to an app/service
+           of some kind. -->
+      <_AppProjects Include="@(ProjectReference)" />
     </ItemGroup>
     <MSBuild Projects="@(_AppProjects)" BuildInParallel="true" Targets="GetTargetPath">
       <Output TaskParameter="TargetOutputs" ItemName="ProjectPaths" />

@@ -17,8 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Components\Aspire.StackExchange.Redis\Aspire.StackExchange.Redis.csproj" />
-    <ProjectReference Include="..\..\..\src\Components\Aspire.RabbitMQ.Client\Aspire.RabbitMQ.Client.csproj" />
+    <PackageReference Include="Aspire.StackExchange.Redis" VersionOverride="8.0.0-dev" />
+    <PackageReference Include="Aspire.RabbitMQ.Client" VersionOverride="8.0.0-dev" />
+    <!-- <ProjectReference Include="..\..\..\src\Components\Aspire.StackExchange.Redis\Aspire.StackExchange.Redis.csproj" />
+    <ProjectReference Include="..\..\..\src\Components\Aspire.RabbitMQ.Client\Aspire.RabbitMQ.Client.csproj" /> -->
     <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
